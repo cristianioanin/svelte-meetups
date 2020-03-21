@@ -3,6 +3,7 @@
   export let href = null;
   export let mode = null;
   export let context = null;
+  export let disabled = false;
 </script>
 
 <style>
@@ -88,7 +89,7 @@
     <slot />
   </a>
 {:else}
-  <button {type} class="{mode} {context}" on:click>
+  <button {type} {disabled} class="{mode} {context}" on:click>
     <slot />
   </button>
 {/if}

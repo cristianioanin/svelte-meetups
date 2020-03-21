@@ -3,6 +3,7 @@
   import TextInput from "../UI/TextInput.svelte";
   import Button from "../UI/Button.svelte";
   import Modal from "../UI/Modal.svelte";
+  import { isRequired, isValidEmail } from "../helpers/form-validation.js";
 
   const dispatch = createEventDispatcher();
 
@@ -17,11 +18,31 @@
     isFavorite: false
   };
 
+  let optionalFields = ["description", "imageUrl"];
+
+  $: formValidation = initValidationMap(newMeetup);
+  $: isFormValid = Array.from(formValidation.values()).every(val => !!val);
+
   function updateNewMeetupValue(event, key) {
     newMeetup = {
       ...newMeetup,
       [key]: event.target.value
     };
+  }
+
+  function initValidationMap(meetup) {
+    const validationMap = new Map(Object.entries(meetup));
+    validationMap.forEach((val, key) => {
+      if (optionalFields.includes(key)) {
+        validationMap.set(key, true);
+      } else if (key === "contactEmail") {
+        validationMap.set(key, isValidEmail(val) && isRequired(val));
+      } else {
+        validationMap.set(key, isRequired(val));
+      }
+    });
+
+    return validationMap;
   }
 </script>
 
@@ -36,16 +57,22 @@
     <TextInput
       label="Title"
       id="title"
+      valid={formValidation.get('title')}
+      errorMessage="This field is required."
       value={newMeetup.title}
       on:input={e => updateNewMeetupValue(e, 'title')} />
     <TextInput
       label="Subtitle"
       id="subtitle"
+      valid={formValidation.get('subtitle')}
+      errorMessage="This field is required."
       value={newMeetup.subtitle}
       on:input={e => updateNewMeetupValue(e, 'subtitle')} />
     <TextInput
       label="Address"
       id="address"
+      valid={formValidation.get('address')}
+      errorMessage="This field is required."
       value={newMeetup.address}
       on:input={e => updateNewMeetupValue(e, 'address')} />
     <TextInput
@@ -56,7 +83,8 @@
     <TextInput
       label="e-Mail"
       id="contactEmail"
-      type="email"
+      valid={formValidation.get('contactEmail')}
+      errorMessage="Required. Please check email address format."
       value={newMeetup.contactEmail}
       on:input={e => updateNewMeetupValue(e, 'contactEmail')} />
     <TextInput
@@ -70,7 +98,10 @@
     <Button type="button" mode="outline" on:click={() => dispatch('cancel')}>
       Cancel
     </Button>
-    <Button type="button" on:click={() => dispatch('save', newMeetup)}>
+    <Button
+      type="button"
+      disabled={!isFormValid}
+      on:click={() => dispatch('save', newMeetup)}>
       Save
     </Button>
   </div>
