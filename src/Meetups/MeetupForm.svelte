@@ -1,11 +1,14 @@
 <script>
-  import { createEventDispatcher } from "svelte";
+  import meetups from "./meetups-store.js";
+  import { createEventDispatcher, onDestroy } from "svelte";
   import TextInput from "../UI/TextInput.svelte";
   import Button from "../UI/Button.svelte";
   import Modal from "../UI/Modal.svelte";
   import { isRequired, isValidEmail } from "../helpers/form-validation.js";
 
   const dispatch = createEventDispatcher();
+
+  export let id = null;
 
   let newMeetup = {
     title: "",
@@ -17,6 +20,17 @@
     contactEmail: "",
     isFavorite: false
   };
+
+  let editMode = false;
+
+  const unsubscribe = meetups.subscribe(items => {
+    const meetup = items.find(entry => entry.id === id);
+
+    if (meetup) {
+      newMeetup = meetup;
+      editMode = true;
+    }
+  });
 
   let optionalFields = ["description", "imageUrl"];
 
@@ -44,6 +58,16 @@
 
     return validationMap;
   }
+
+  function submit() {
+    if (editMode) {
+      dispatch("update", newMeetup);
+    } else {
+      dispatch("save", newMeetup);
+    }
+  }
+
+  onDestroy(() => unsubscribe());
 </script>
 
 <style>
@@ -98,11 +122,13 @@
     <Button type="button" mode="outline" on:click={() => dispatch('cancel')}>
       Cancel
     </Button>
-    <Button
-      type="button"
-      disabled={!isFormValid}
-      on:click={() => dispatch('save', newMeetup)}>
+    <Button type="button" disabled={!isFormValid} on:click={submit}>
       Save
     </Button>
+    {#if editMode}
+      <Button type="button" on:click={() => dispatch('delete', id)}>
+        Delete
+      </Button>
+    {/if}
   </div>
 </Modal>
