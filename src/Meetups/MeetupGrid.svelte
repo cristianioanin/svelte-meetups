@@ -1,5 +1,7 @@
 <script>
   import { createEventDispatcher } from "svelte";
+  import { fade } from "svelte/transition";
+  import { flip } from "svelte/animate";
   import MeetupItem from "./MeetupItem.svelte";
   import MeetupsFilter from "./MeetupsFilter.svelte";
   import Button from "../UI/Button.svelte";
@@ -45,7 +47,9 @@
   <Button on:click={() => dispatch('newmeetup')}>New Meetup</Button>
 </section>
 <section class="meetups">
-  {#each filteredMeetups as meetup}
-    <MeetupItem {meetup} on:showdetails on:edit />
+  {#each filteredMeetups as meetup (meetup.id)}
+    <div transition:fade animate:flip={{ duration: 400 }}>
+      <MeetupItem {meetup} on:showdetails on:edit />
+    </div>
   {/each}
 </section>
