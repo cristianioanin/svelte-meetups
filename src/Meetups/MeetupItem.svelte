@@ -9,7 +9,24 @@
   export let meetup;
 
   function toggleFavorite() {
-    meetups.toggleFavorite(meetup.id);
+    fetch(
+      `https://meetups-svelte-c57f3.firebaseio.com/meetups/${meetup.id}.json`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ isFavorite: !meetup.isFavorite }),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      }
+    )
+      .then(res => {
+        if (!res.ok) {
+          throw new Error("Favorite setting for Meetup failed...");
+        }
+
+        meetups.toggleFavorite(meetup.id);
+      })
+      .catch(console.log);
   }
 </script>
 

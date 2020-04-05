@@ -2,6 +2,7 @@
   import meetups from "./meetups-store.js";
   import { createEventDispatcher, onDestroy } from "svelte";
   import TextInput from "../UI/TextInput.svelte";
+  import Error from "../UI/Error.svelte";
   import Button from "../UI/Button.svelte";
   import Modal from "../UI/Modal.svelte";
   import { isRequired, isValidEmail } from "../helpers/form-validation.js";
@@ -22,6 +23,7 @@
   };
 
   let editMode = false;
+  let error;
 
   const unsubscribe = meetups.subscribe(items => {
     const meetup = items.find(entry => entry.id === id);
@@ -61,10 +63,55 @@
 
   function submit() {
     if (editMode) {
-      dispatch("update", newMeetup);
+      const { id, ...meetupData } = newMeetup;
+      fetch(`https://meetups-svelte-c57f3.firebaseio.com/meetups/${id}.json`, {
+        method: "PATCH",
+        body: JSON.stringify(meetupData),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      })
+        .then(res => {
+          if (!res.ok) {
+            throw new Error("Update Meetup failed...");
+          }
+
+          dispatch("update", newMeetup);
+        })
+        .catch(err => {
+          dispatch("cancel");
+          error = err;
+        });
     } else {
-      dispatch("save", newMeetup);
+      fetch("https://meetups-svelte-c57f3.firebaseio.com/meetups.json", {
+        method: "POST",
+        body: JSON.stringify(newMeetup),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      })
+        .then(res => {
+          if (!res.ok) {
+            throw new Error("Add Meetup failed...");
+          }
+
+          return res.json();
+        })
+        .then(data => {
+          dispatch("save", {
+            ...newMeetup,
+            id: data.name
+          });
+        })
+        .catch(err => {
+          dispatch("cancel");
+          error = err;
+        });
     }
+  }
+
+  function closeErrorModal() {
+    error = null;
   }
 
   onDestroy(() => unsubscribe());
@@ -75,6 +122,10 @@
     width: 100%;
   }
 </style>
+
+{#if error}
+  <Error message={error.message} on:cancel={closeErrorModal} />
+{/if}
 
 <Modal title="Meetup Details" on:cancel>
   <form>
